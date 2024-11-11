@@ -1,7 +1,7 @@
 import launch
 import launch_ros.actions
 
-_PACKAGE_NAME = 'zr30camera'
+_PACKAGE_NAME = 'a8camera'
 _CAMERA_CONTROLLER_NAME = 'zr30_controller'
 _CAMERA_STREAM_NODE_NAME = 'zr30_stream'
 _CAMERA_CONTROLLER_EXECUTABLE = 'controller'

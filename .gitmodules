@@ -1,0 +1,3 @@
+[submodule "siyi_sdk"]
+	path = siyi_sdk
+	url = https://github.com/SongSiWoon/siyi_sdk.git

@@ -1,13 +1,13 @@
 import os
 from glob import glob
-from setuptools import  setup
+from setuptools import setup, find_packages
 
-package_name = 'zr30camera'
+package_name = 'a8camera'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name],
+    packages=find_packages(include=[package_name, 'siyi_sdk', 'siyi_sdk.*']),  # siyi_sdk 포함
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -24,8 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'stream = zr30camera.camera_stream:main',
-            'controller = zr30camera.camera_controller:main',
+            'stream = a8camera.camera_stream:main',
+            'controller = a8camera.camera_controller:main',
         ],
     },
 )

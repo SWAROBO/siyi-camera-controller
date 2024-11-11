@@ -1,4 +1,4 @@
-# SIYI ZR30 Camera ROS2 driver
+# SIYI A8 Camera ROS2 driver
 This repository contains a ROS2 Humble driver for the SIYI ZR30 camera. The driver is based on the SIYI SDK, which can be found here: ```https://github.com/mzahana/siyi_sdk```. The SDK is modified as a python package (see [Install dependencies](#install-dependencies) section).
 
 Following functionalities are implemented:
@@ -58,7 +58,7 @@ The ```siyi_sdk``` will automatically connect to the camera through these ports.
 # Running the package
 Run the camera controller and camera stream ROS2 nodes with the launch file:
 ```bash
-ros2 launch zr30camera zr30camera_launch.py
+ros2 launch a8camera a8camera_launch.py
 ```
 
 If the camera is connected to the network, the camera controller node will automatically connect to the camera and start the stream. If the camera <b>is not</b> connected to the network, the camera controller will timeout after 5 seconds. If the camera is physically connected to the computer, make sure so be a part of the same network as the camera (see [Configure network](#configure-network) section).

@@ -8,17 +8,18 @@ from std_msgs.msg import Float32, Int8
 from siyi_sdk.siyi_sdk import SIYISDK
 from time import sleep
 
-_GET_GIMBAL_ATTITUTE_TOPIC =    "ZR30/get_gimbal_attitude"
-_GET_ZOOM_TOPIC =               "ZR30/get_zoom_level"
-_SET_GIMBAL_ATTITUDE_TOPIC =    "ZR30/set_gimbal_attitude"
-_SET_ZOOM_TOPIC =               "ZR30/set_zoom_level"
-_SET_FOCUS_TOPIC =              "ZR30/set_focus"
+_GET_GIMBAL_ATTITUTE_TOPIC =    "a8_mini/get_gimbal_attitude"
+_GET_ZOOM_TOPIC =               "a8_mini/get_zoom_level"
+_SET_GIMBAL_ATTITUDE_TOPIC =    "a8_mini/set_gimbal_attitude"
+_SET_ZOOM_TOPIC =               "a8_mini/set_zoom_level"
+_SET_FOCUS_TOPIC =              "a8_mini/set_focus"
+_SET_PHOTO_TOPIC =              "a8_mini/set_photo"
 
-_CONTROLLER_NODE_NAME =         "zr30_controller_node"
-_GIMBAL_FRAME_ID =              "ZR30_Camera_Gimbal"
+_CONTROLLER_NODE_NAME =         "a8mini_controller_node"
+_GIMBAL_FRAME_ID =              "A8MINI_Camera_Gimbal"
 
-_ZR30_SERVER_IP =               "192.168.144.25"
-_ZR30_SERVER_PORT =             37260
+A8MINI_SERVER_IP =               "192.168.144.25"
+A8MINI_SERVER_PORT =             37260
 
 _PUBLISH_PERIOD_SEC =           0.05
 _QUEUE_SIZE =                   100
@@ -78,6 +79,14 @@ class CameraControllerNode(Node):
             callback_group=self.subscribers_callback_group
         )
 
+        self.photo_subscriber_ = self.create_subscription(
+            Int8,
+            _SET_PHOTO_TOPIC,
+            self.set_photo_callback,
+            10,
+            callback_group=self.subscribers_callback_group
+        )
+
         # Initialize zoom level
         self.camera.requestZoomHold()
 
@@ -100,7 +109,7 @@ class CameraControllerNode(Node):
 
     def get_attitude_callback(self) -> None:
         """
-        Will use the siyi_sdk to publish the current roll, pitch and yaw of the ZR30 Camera.
+        Will use the siyi_sdk to publish the current roll, pitch and yaw of the A8MINI Camera.
         """
         msg = Vector3Stamped()
 
@@ -134,12 +143,12 @@ class CameraControllerNode(Node):
             # than the one implemented in siyi_sdk.
             self.camera.requestCenterGimbal()
         else:
-            self.camera.setGimbalRotation(yaw, pitch, err_thresh=_GIMBAL_ERR_THRESH, kp=_GIMBAL_KP)
+            self.camera.requestSetAngles(yaw, pitch)
 
 
     def get_zoom_callback(self) -> None:
         """
-        Will use the siyi_sdk to publish the zoom level of the ZR30 Camera.
+        Will use the siyi_sdk to publish the zoom level of the A8MINI Camera.
         """
         msg = Float32()
         zoom_level = float(self.camera.getZoomLevel())
@@ -196,7 +205,17 @@ class CameraControllerNode(Node):
         else:
             self.get_logger().error(f"Invalid focus argument {val}.")
             return
-        
+
+    def set_photo_callback(self, msg: Int8) -> None:
+        val = msg.data
+
+        if (val == 1):
+            self.camera.requestPhoto()
+            self.get_logger().info(f"Taking photo requested")
+        else:
+            self.get_logger().error(f"Invalid take photo argument {val}.")
+            return
+
     def _request_zoom(self, zoom) -> None:
         """
         Will zoom in or out on the camera and return the zoom level.
@@ -231,7 +250,7 @@ class CameraControllerNode(Node):
 
 
 def main(args=None):
-    camera = SIYISDK(server_ip=_ZR30_SERVER_IP, port=_ZR30_SERVER_PORT)
+    camera = SIYISDK(server_ip=A8MINI_SERVER_IP, port=A8MINI_SERVER_PORT)
     camera.connect()
 
     rclpy.init(args=args)

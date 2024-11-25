@@ -14,6 +14,7 @@ _SET_GIMBAL_ATTITUDE_TOPIC =    "a8_mini/set_gimbal_attitude"
 _SET_ZOOM_TOPIC =               "a8_mini/set_zoom_level"
 _SET_FOCUS_TOPIC =              "a8_mini/set_focus"
 _SET_PHOTO_TOPIC =              "a8_mini/set_photo"
+_SET_VIDEO_TOPIC =              "a8_mini/set_video"
 
 _CONTROLLER_NODE_NAME =         "a8mini_controller_node"
 _GIMBAL_FRAME_ID =              "A8MINI_Camera_Gimbal"
@@ -83,6 +84,14 @@ class CameraControllerNode(Node):
             Int8,
             _SET_PHOTO_TOPIC,
             self.set_photo_callback,
+            10,
+            callback_group=self.subscribers_callback_group
+        )
+
+        self.video_subscriber_ = self.create_subscription(
+            Int8,
+            _SET_VIDEO_TOPIC,
+            self.set_video_callback,
             10,
             callback_group=self.subscribers_callback_group
         )
@@ -214,6 +223,27 @@ class CameraControllerNode(Node):
             self.get_logger().info(f"Taking photo requested")
         else:
             self.get_logger().error(f"Invalid take photo argument {val}.")
+            return
+
+    def set_video_callback(self, msg: Int8) -> None:
+        command = msg.data
+
+        if command == 1:  # Start recording
+            if not self.camera._record_msg.state:
+                self.get_logger().info("Start Recording.")
+                self.camera.requestRecording()
+                self.record_status = True
+            else:
+                self.get_logger().warning("Recording is already in progress.")
+        elif command == 0:  # Stop recording
+            if self.camera._record_msg.state:
+                self.get_logger().info("Stop Recording.")
+                self.camera.requestRecording()
+                self.record_status = False
+            else:
+                self.get_logger().warning("Recording is not active.")
+        else:
+            self.get_logger().error(f"Invalid record command received: {command}")
             return
 
     def _request_zoom(self, zoom) -> None:

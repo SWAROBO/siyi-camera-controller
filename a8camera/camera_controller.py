@@ -32,13 +32,21 @@ _THREAD_COUNT =                 2
 _SHUTDOWN_TIMEOUT_SEC =         3.0
 
 class CameraControllerNode(Node):
-    def __init__(self, camera: SIYISDK, node_name: str =_CONTROLLER_NODE_NAME, pub_period: float=_PUBLISH_PERIOD_SEC) -> None:
+    def __init__(self, node_name: str =_CONTROLLER_NODE_NAME, pub_period: float=_PUBLISH_PERIOD_SEC) -> None:
         super().__init__(node_name)
-        self.camera = camera
 
         self.declare_parameter('system_id', 1)
         self.system_id = self.get_parameter('system_id').get_parameter_value().integer_value
         self.topic_name = "drone"+str(self.system_id)
+
+        self.declare_parameter('camera_server_ip', "192.168.144.25")
+        self.declare_parameter('camera_port', 37260)
+
+        camera_server_ip = self.get_parameter('camera_server_ip').get_parameter_value().string_value
+        camera_port = self.get_parameter('camera_port').get_parameter_value().integer_value
+
+        self.camera = SIYISDK(server_ip=camera_server_ip, port=camera_port)
+        self.camera.connect()
 
         # define callback groups
         self.publishers_callback_group = MutuallyExclusiveCallbackGroup()
@@ -284,11 +292,9 @@ class CameraControllerNode(Node):
 
 
 def main(args=None):
-    camera = SIYISDK(server_ip=A8MINI_SERVER_IP, port=A8MINI_SERVER_PORT)
-    camera.connect()
 
     rclpy.init(args=args)
-    node = CameraControllerNode(camera=camera)
+    node = CameraControllerNode()
 
     executor = MultiThreadedExecutor(num_threads=_THREAD_COUNT)
     executor.add_node(node)

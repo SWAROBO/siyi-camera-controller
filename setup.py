@@ -19,7 +19,7 @@ setup(
     zip_safe=True,
     maintainer='aimas',
     maintainer_email='aimas.lund@gmail.com',
-    description='TODO: Package description',
+    description='',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={

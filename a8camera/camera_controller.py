@@ -35,15 +35,11 @@ class CameraControllerNode(Node):
     def __init__(self, node_name: str =_CONTROLLER_NODE_NAME, pub_period: float=_PUBLISH_PERIOD_SEC) -> None:
         super().__init__(node_name)
 
-        self.declare_parameter('system_id', 1)
-        self.system_id = self.get_parameter('system_id').get_parameter_value().integer_value
+        self.system_id = self.declare_parameter('system_id', 1).value
         self.topic_name = "drone"+str(self.system_id)
 
-        self.declare_parameter('camera_server_ip', "192.168.144.25")
-        self.declare_parameter('camera_port', 37260)
-
-        camera_server_ip = self.get_parameter('camera_server_ip').get_parameter_value().string_value
-        camera_port = self.get_parameter('camera_port').get_parameter_value().integer_value
+        camera_server_ip = self.declare_parameter('camera_server_ip', "192.168.144.25").value
+        camera_port = self.declare_parameter('camera_port', 37260).value
 
         self.camera = SIYISDK(server_ip=camera_server_ip, port=camera_port)
         self.camera.connect()
@@ -290,6 +286,10 @@ class CameraControllerNode(Node):
 
         print("Achieved zoom level: ", cam_zoom)
 
+    def destroy_node(self):
+        self.camera.disconnect()
+        self.get_logger().info('Camera Node being destroyed')
+        super().destroy_node()
 
 def main(args=None):
 
@@ -308,7 +308,7 @@ def main(args=None):
     # executor.shutdown(_SHUTDOWN_TIMEOUT_SEC)
     node.destroy_node()
     rclpy.shutdown()
-    camera.disconnect()
+
 
 if __name__ == "__main__":
     main()

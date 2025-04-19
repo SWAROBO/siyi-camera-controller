@@ -1,26 +1,43 @@
 import cv2
 import rclpy
-import numpy as np 
 
 from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 
-_CAM_STREAM_URI = "rtsp://192.168.144.25:8554/main.264"
-_CAM_NODE_NAME = "camera_node"
-_CAM_PUB_TOPIC = "ZR30/camera_stream"
-_CAM_FRAME_ID = "ZR30_Camera_Capture"
-_QUEUE_SIZE = 100
-_PUBLISH_PERIOD_SEC = 0.01
+_CAM_NODE_NAME = "a8_mini_stream_node"
+_CAM_PUB_TOPIC = "a8_mini/camera_stream"
+_CAM_FRAME_ID = "a8_mini"
+_QUEUE_SIZE = 1
+_PUBLISH_PERIOD_SEC = 0.05
+
 
 class CameraStreamNode(Node):
-    def __init__(self, capture: cv2.VideoCapture, node_name: str =_CAM_NODE_NAME, pub_period: float=_PUBLISH_PERIOD_SEC) -> None:
+    def __init__(self, node_name: str = _CAM_NODE_NAME, pub_period: float = _PUBLISH_PERIOD_SEC) -> None:
         super().__init__(node_name)
-        self.capture = capture
+
+        self.system_id = self.declare_parameter('system_id', 1).value
+        self.topic_name = "drone" + str(self.system_id)
+
+        camera_server_ip = self.declare_parameter('camera_server_ip', "192.168.144.25").value
+        stream_port = self.declare_parameter('stream_port', 8554).value
+
+        gst_str = (
+            f"rtspsrc location=rtsp://{camera_server_ip}:{stream_port}/main.264 latency=0 ! "
+            f"rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! "
+            f"appsink drop=1 sync=false max-buffers=1"
+        )
+
+        self.capture = cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
+        if not self.capture.isOpened():
+            self.get_logger().error("Failed to open camera stream.")
+            raise RuntimeError("Camera open failed")
+
         self.bridge = CvBridge()
-        
+
         # define video feed publish topic
-        self.publisher = self.create_publisher(Image, _CAM_PUB_TOPIC, _QUEUE_SIZE)
+        self.get_logger().info(f"topic: {self.topic_name}/{_CAM_PUB_TOPIC}")
+        self.publisher = self.create_publisher(Image, f"{self.topic_name}/{_CAM_PUB_TOPIC}", _QUEUE_SIZE)
 
         # define publishing frequency and callback function
         self.timer_ = self.create_timer(pub_period, self.capture_image_callback)
@@ -30,31 +47,37 @@ class CameraStreamNode(Node):
         """
         Captures an image from the camera via RTSP and publishes it as a ROS Image message.
         """
-        _, frame = self.capture.read()
-        shape = np.shape(frame)
+        ret, frame = self.capture.read()
+        if not ret or frame is None:
+            self.get_logger().warn("Failed to capture frame from camera stream.")
+            return
 
-        msg = self.bridge.cv2_to_imgmsg(frame, 'bgr8')
-        msg.header.frame_id = _CAM_FRAME_ID
-        msg.header.stamp = Node.get_clock(self).now().to_msg()
-        msg.height = shape[0]
-        msg.width = shape[1]
-        msg.step = shape[2]*shape[1]
+        try:
+            msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
+            msg.header.frame_id = _CAM_FRAME_ID
+            msg.header.stamp = Node.get_clock(self).now().to_msg()
 
-        self.publisher.publish(msg)
-        self.i += 1
+            self.publisher.publish(msg)
+            self.i += 1
+
+        except Exception as e:
+            self.get_logger().error(f"Image conversion error: {e}")
+
+    def destroy_node(self):
+        self.capture.release()
+        self.get_logger().info('Streaming Node being destroyed')
+        super().destroy_node()
 
 
 def main(args=None):
-    capture = cv2.VideoCapture(_CAM_STREAM_URI)
-
     rclpy.init(args=args)
-    camera_publisher = CameraStreamNode(capture=capture)
+    camera_publisher = CameraStreamNode()
 
     rclpy.spin(camera_publisher)
 
     camera_publisher.destroy_node()
     rclpy.shutdown()
-    capture.release()
+
 
 if __name__ == "__main__":
     main()

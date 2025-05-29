@@ -16,9 +16,6 @@ class CameraStreamNode(Node):
     def __init__(self, node_name: str = _CAM_NODE_NAME, pub_period: float = _PUBLISH_PERIOD_SEC) -> None:
         super().__init__(node_name)
 
-        self.system_id = self.declare_parameter('system_id', 1).value
-        self.topic_name = "drone" + str(self.system_id)
-
         camera_server_ip = self.declare_parameter('camera_server_ip', "192.168.144.25").value
         stream_port = self.declare_parameter('stream_port', 8554).value
 
@@ -36,8 +33,8 @@ class CameraStreamNode(Node):
         self.bridge = CvBridge()
 
         # define video feed publish topic
-        self.get_logger().info(f"topic: {self.topic_name}/{_CAM_PUB_TOPIC}")
-        self.publisher = self.create_publisher(Image, f"{self.topic_name}/{_CAM_PUB_TOPIC}", _QUEUE_SIZE)
+        self.get_logger().info(f"topic: __ns/{_CAM_PUB_TOPIC}")
+        self.publisher = self.create_publisher(Image, _CAM_PUB_TOPIC, _QUEUE_SIZE)
 
         # define publishing frequency and callback function
         self.timer_ = self.create_timer(pub_period, self.capture_image_callback)

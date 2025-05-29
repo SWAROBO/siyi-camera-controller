@@ -35,8 +35,6 @@ class CameraControllerNode(Node):
     def __init__(self, node_name: str =_CONTROLLER_NODE_NAME, pub_period: float=_PUBLISH_PERIOD_SEC) -> None:
         super().__init__(node_name)
 
-        self.system_id = self.declare_parameter('system_id', 1).value
-        self.topic_name = "drone"+str(self.system_id)
 
         camera_server_ip = self.declare_parameter('camera_server_ip', "192.168.144.25").value
         camera_port = self.declare_parameter('camera_port', 37260).value
@@ -51,14 +49,14 @@ class CameraControllerNode(Node):
         # define get attribute topics
         self.att_publisher_ = self.create_publisher(
             Vector3Stamped,
-            f"{self.topic_name}/{_GET_GIMBAL_ATTITUTE_TOPIC}",
+            _GET_GIMBAL_ATTITUTE_TOPIC,
             _QUEUE_SIZE, 
             callback_group=self.publishers_callback_group
         )
 
         self.zoom_publisher_ = self.create_publisher(
             Float32, 
-            f"{self.topic_name}/{_GET_ZOOM_TOPIC}",
+            _GET_ZOOM_TOPIC,
             _QUEUE_SIZE, 
             callback_group=self.publishers_callback_group
         )
@@ -66,7 +64,7 @@ class CameraControllerNode(Node):
         # define set attribute topics
         self.att_subscriber_ = self.create_subscription(
             Vector3Stamped,
-            f"{self.topic_name}/{_SET_GIMBAL_ATTITUDE_TOPIC}",
+            _SET_GIMBAL_ATTITUDE_TOPIC,
             self.set_attitude_callback, 
             10, 
             callback_group=self.subscribers_callback_group
@@ -74,7 +72,7 @@ class CameraControllerNode(Node):
 
         self.zoom_subscriber_ = self.create_subscription(
             Float32,
-            f"{self.topic_name}/{_SET_ZOOM_TOPIC}",
+            _SET_ZOOM_TOPIC,
             self.set_zoom_callback, 
             10,
             callback_group=self.subscribers_callback_group
@@ -82,7 +80,7 @@ class CameraControllerNode(Node):
 
         self.focus_subscriber_ = self.create_subscription(
             Int8, 
-            f"{self.topic_name}/{_SET_FOCUS_TOPIC}",
+            _SET_FOCUS_TOPIC,
             self.set_focus_callback, 
             10,
             callback_group=self.subscribers_callback_group
@@ -90,7 +88,7 @@ class CameraControllerNode(Node):
 
         self.photo_subscriber_ = self.create_subscription(
             Int8,
-            f"{self.topic_name}/{_SET_PHOTO_TOPIC}",
+            _SET_PHOTO_TOPIC,
             self.set_photo_callback,
             10,
             callback_group=self.subscribers_callback_group
@@ -98,7 +96,7 @@ class CameraControllerNode(Node):
 
         self.video_subscriber_ = self.create_subscription(
             Int8,
-            f"{self.topic_name}/{_SET_VIDEO_TOPIC}",
+            _SET_VIDEO_TOPIC,
             self.set_video_callback,
             10,
             callback_group=self.subscribers_callback_group
